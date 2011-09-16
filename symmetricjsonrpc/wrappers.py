@@ -25,6 +25,7 @@
 behind an identical interface."""
 
 import select
+import unittest
 
 class WriterWrapper(object):
     """Provides a unified interface for writing to sockets or
@@ -62,14 +63,21 @@ class WriterWrapper(object):
     def write(self, s):
         self.buff.append(s)
         self.buff_len += len(s)
+        if self._is_terminated():
+            return
         if self.buff_len > self.buff_maxsize:
             self.flush()
 
     def flush(self):
         self._wait()
         self._write(''.join(self.buff))
+        if self._is_terminated():
+            self._write(self.f.terminator)
         del self.buff[:]
         self.buff_len = 0
+
+    def _is_terminated(self):
+        return hasattr(self.f, 'terminator')
 
     def _wait(self):
         if not self.poll:
@@ -176,3 +184,6 @@ class ReIterator(object):
             return self._prefix[-1]
         except StopIteration:
             raise EOFError()
+
+
+#class Test
