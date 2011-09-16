@@ -65,6 +65,8 @@ class WriterWrapper(object):
     def write(self, s):
         self.buff.append(s)
         self.buff_len += len(s)
+        if has_terminator(self.f):
+            return
         if self.buff_len > self.buff_maxsize:
             self.flush()
 
@@ -76,6 +78,8 @@ class WriterWrapper(object):
         while data:
             self._wait()
             data = data[self._write(data):]
+        if has_terminator(self.f):
+            self._write(self.f.terminator)
 
     def _wait(self):
         if not self.poll:
@@ -139,6 +143,9 @@ class ReaderWrapper(object):
         else:
             if debug_read:
                 print "read(%s)" % (repr(result),)
+            # Swallow terminators and go on to next character.
+            if has_terminator(self.file) and result == self.file.terminator:
+                    return self.next()
             return result
 
     def close(self):
@@ -190,3 +197,10 @@ class ReIterator(object):
             return self._prefix[-1]
         except StopIteration:
             raise EOFError()
+
+
+def add_terminator(filelike_obj, terminator):
+    filelike_obj.terminator = terminator
+
+def has_terminator(filelike_obj):
+    return hasattr(filelike_obj, 'terminator')
